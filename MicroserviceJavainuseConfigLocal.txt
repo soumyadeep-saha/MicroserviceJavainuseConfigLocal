@@ -1,0 +1,126 @@
+MicroserviceJavainuseConfigLocal
+
+Spring Cloud Config Simple Example
+We implement Spring Cloud Config Server.
+
+What is Spring Cloud Config? Need for it?
+Spring Cloud Config provides server and client-side support for externalized configuration in a distributed system. 
+With the Config Server you have a central place to manage external properties for applications across all environments.
+
+Modules can have common global properties which are repeated in all the modules. For example we have have properties related to Database, Messaging Queues etc.
+
+For example in our employee-consumer and employee-producer we are having the following property for registering to Eureka Server.
+eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka
+
+We can externalize this property using Spring Cloud Config.
+
+How Spring Cloud Config Works?
+Spring Cloud Config Server can be either configured in following 2 ways-
+
+Using Local File System - Properties to be externalized are stored in the local file system of the Spring Cloud Config Server.
+
+Using GIT Repo - Properties to be externalized are stored in the GIT Repo.
+
+We will be looking at configuration using local file system. In the next tutorial we will implement Spring Cloud Config Server using GIT Repo.
+
+We will be making use of the employee-producer and the eureka-server(MicroserviceJavainuseRegistrationAll) code we developed in a previous tutorial.
+In this tutorial we will be-
+1. We will be creating a new module name employee-config-server having the externalized Eureka registration property.
+2. Next we will the make code changes to the employee-producer module to get the required Eureka registration property from the employee-config-server.
+
+We will create a maven project named as employee-config-server The project structure for this module will be as follows-
+
+The pom.xml will be as follows with the spring-cloud-config-server
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+
+<resources>
+			<resource>
+				<filtering>true</filtering>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>*.properties</include>
+					<include>common-config/</include>
+				</includes>
+			</resource>
+</resources>
+
+Next define the properties in application.properties. The spring.profiles.active=native property tells the colfig module to look for the externalized properties locally.
+spring.profiles.active=native
+server.port=8888
+spring.cloud.config.server.native.search-locations=classpath:/common-config
+
+Next create a folder named common-config, and inside it create the application.properties. This is where we will store the global common properties to be used by other microservices.
+eureka.client.serviceUrl.defaultZone=http://localhost:8090/eureka
+
+Finally we annotate the Spring Boot Main class with @EnableConfigServer.With this the module will act as a config server.
+@SpringBootApplication
+@EnableConfigServer
+public class EmployeeConfigApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(EmployeeConfigApplication.class, args);
+	}
+}
+
+Code changes for employee-producer
+The changes we make for the producer module are
+Add the Spring Cloud Server Config dependency in the pom.xml
+The pom.xml will be as follows-
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+<resources>
+			<resource>
+				<filtering>true</filtering>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>*.properties</include>
+				</includes>
+			</resource>		
+</resources>
+
+Remove the Eureka property from the employee producer module.
+
+ 
+Next start the modules in following sequence-
+employee-config-server
+eureka-server
+employee-producer
+On running the employee-producer we get the output as follows- 
+The employee-producer module gets the eureka properties from the employee-config-server module and starts successfully.
+
+Check http://localhost:8888/application/default -> it will fetch us all the global application properties
+
+Check if producer and consumer are registered in Eureka
+http://localhost:8761/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
